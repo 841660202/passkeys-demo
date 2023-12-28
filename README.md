@@ -6,9 +6,9 @@ passkeys-demo is a demo web application developers can have a look and try thems
 
 ### Prerequisite
 
-* node.js 18
-* gcloud
-* java 11+
+- node.js 18
+- gcloud
+- java 11+
 
 ### Install
 
@@ -29,4 +29,3 @@ npm run emulator & npm run dev
 ```
 
 Open [http://localhost:8080](http://localhost:8080).
-

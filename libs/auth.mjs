@@ -21,7 +21,7 @@ import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
-  verifyAuthenticationResponse
+  verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import { Users, Credentials } from './db.mjs';
@@ -33,23 +33,24 @@ function csrfCheck(req, res, next) {
     return res.status(400).json({ error: 'invalid access.' });
   }
   next();
-};
+}
 
 /**
  * Checks CSRF protection using custom header `X-Requested-With`
  * If the session doesn't contain `signed-in`, consider the user is not authenticated.
  **/
 async function sessionCheck(req, res, next) {
+  console.log(req.session);
   if (!req.session['signed-in'] || !req.session.username) {
     return res.status(401).json({ error: 'not signed in.' });
   }
   const user = await Users.findByUsername(req.session.username);
   if (!user) {
-    return res.status(401).json({ error: 'user not found.' });    
+    return res.status(401).json({ error: 'user not found.' });
   }
   res.locals.user = user;
   next();
-};
+}
 
 /**
  * Get the expected origin that the user agent is claiming to be at. If the
@@ -59,24 +60,22 @@ async function sessionCheck(req, res, next) {
  */
 function getOrigin(userAgent) {
   let origin = process.env.ORIGIN;
-  
+
   const appRe = /^[a-zA-z0-9_.]+/;
   const match = userAgent.match(appRe);
   if (match) {
     // Check if UserAgent comes from a supported Android app.
     if (process.env.ANDROID_PACKAGENAME && process.env.ANDROID_SHA256HASH) {
       // `process.env.ANDROID_PACKAGENAME` is expected to have a comma separated package names.
-      const package_names = process.env.ANDROID_PACKAGENAME.split(",").map(name => name.trim());
+      const package_names = process.env.ANDROID_PACKAGENAME.split(',').map((name) => name.trim());
       // `process.env.ANDROID_SHA256HASH` is expected to have a comma separated hash values.
-      const hashes = process.env.ANDROID_SHA256HASH.split(",").map(hash => hash.trim());
+      const hashes = process.env.ANDROID_SHA256HASH.split(',').map((hash) => hash.trim());
       const appName = match[0];
       // Find and construct the expected origin string.
       for (let i = 0; i < package_names.length; i++) {
         if (appName === package_names[i]) {
           // We recognize this app, so use the corresponding hash.
-          const octArray = hashes[i].split(':').map((h) =>
-            parseInt(h, 16),
-          );
+          const octArray = hashes[i].split(':').map((h) => parseInt(h, 16));
           const androidHash = isoBase64URL.fromBuffer(octArray);
           origin = `android:apk-key-hash:${androidHash}`;
           break;
@@ -84,7 +83,7 @@ function getOrigin(userAgent) {
       }
     }
   }
-  
+
   return origin;
 }
 
@@ -96,7 +95,7 @@ router.post('/username', async (req, res) => {
   const { username } = req.body;
 
   try {
-     // Only check username, no need to check password as this is a mock
+    // Only check username, no need to check password as this is a mock
     if (username && /^[a-zA-Z0-9@\.\-_]+$/.test(username)) {
       // See if account already exists
       let user = await Users.findByUsername(username);
@@ -169,7 +168,7 @@ router.post('/updateDisplayName', csrfCheck, sessionCheck, async (req, res) => {
  */
 router.get('/signout', (req, res) => {
   // Remove the session
-  req.session.destroy()
+  req.session.destroy();
   // Redirect to `/`
   return res.redirect(307, '/');
 });
@@ -230,8 +229,8 @@ router.post('/registerRequest', csrfCheck, sessionCheck, async (req, res) => {
     // Set `authenticatorSelection`.
     const authenticatorSelection = {
       authenticatorAttachment: 'platform',
-      requireResidentKey: true
-    }
+      requireResidentKey: true,
+    };
     const attestationType = 'none';
 
     // Use SimpleWebAuthn's handy function to create registration options.
@@ -270,7 +269,6 @@ router.post('/registerResponse', csrfCheck, sessionCheck, async (req, res) => {
   const credential = req.body;
 
   try {
-
     // Use SimpleWebAuthn's handy function to verify the registration request.
     const verification = await verifyRegistrationResponse({
       response: credential,
@@ -294,14 +292,14 @@ router.post('/registerResponse', csrfCheck, sessionCheck, async (req, res) => {
     const base64CredentialID = isoBase64URL.fromBuffer(credentialID);
 
     const { user } = res.locals;
-    
+
     // Store the registration result.
     await Credentials.update({
       id: base64CredentialID,
       publicKey: base64PublicKey,
       name: req.useragent.platform,
       transports: credential.response.transports || [],
-      registered: (new Date()).getTime(),
+      registered: new Date().getTime(),
       last_used: null,
       user_id: user.id,
     });
@@ -333,7 +331,7 @@ router.post('/signinRequest', csrfCheck, async (req, res) => {
     // Keep the challenge value in a session.
     req.session.challenge = options.challenge;
 
-    return res.json(options)
+    return res.json(options);
   } catch (e) {
     console.error(e);
 
@@ -352,7 +350,6 @@ router.post('/signinResponse', csrfCheck, async (req, res) => {
   const expectedRPID = process.env.HOSTNAME;
 
   try {
-
     // Find the matching credential from the credential ID
     const cred = await Credentials.findById(credential.id);
     if (!cred) {
@@ -390,7 +387,7 @@ router.post('/signinResponse', csrfCheck, async (req, res) => {
     }
 
     // Update the last used timestamp.
-    cred.last_used = (new Date()).getTime();
+    cred.last_used = new Date().getTime();
     await Credentials.update(cred);
 
     // Delete the challenge from the session.

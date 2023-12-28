@@ -1,51 +1,59 @@
-    <main class="content center">
-      <h2>
-        Choose your passkey to sign in
-      </h2>
-      <section class="center">
-        <mwc-button id="passkey-signin" icon="key" raised>Sign-in with passkey</mwc-button>
-        <mwc-button><a href="/">Use form based sign-in instead</a></mwc-button>
-        <ol class="instructions narrow">
-          <li>If you haven't created a passkey yet, go back to <a href="/">the top page</a> and follow the instructions to create one.</li>
-          <li>If you already have a passkey, click on the "Sign in with passkey" button.</li>
-          <li>Select a passkey.</li>
-          <li>Authenticate.</li>
-          <li>You are signed in.</li>
-        </ol>
-      </section>
-    </main>
-    <script type="module">
-      import { $, _fetch, loading, authenticate } from '/client.js';
+<main class="content center">
+  <h2>
+    Choose your passkey to sign in
+  </h2>
+  <section class="center">
 
-      // $('#code').addEventListener('click', e => {
-      //   location.href = 'https://glitch.com/edit/#!/{{project_name}}';
-      // });
 
-      const redirect = (path) => {
-        location.href = path;
+    <mwc-button id="passkey-signin" icon="key" raised>Sign-in with passkey</mwc-button>
+
+
+    <mwc-button><a href="/">Use form based sign-in instead</a></mwc-button>
+
+    <ol class="instructions narrow">
+      <li>If you haven't created a passkey yet, go back to <a href="/">the top page</a> and follow the instructions to
+        create one.</li>
+      <li>If you already have a passkey, click on the "Sign in with passkey" button.</li>
+      <li>Select a passkey.</li>
+      <li>Authenticate.</li>
+      <li>You are signed in.</li>
+    </ol>
+  </section>
+</main>
+<script type="module">
+  import { $, _fetch, loading, authenticate } from '/client.js';
+
+  // $('#code').addEventListener('click', e => {
+  //   location.href = 'https://glitch.com/edit/#!/{{project_name}}';
+  // });
+
+  const redirect = (path) => {
+    location.href = path;
+  }
+
+  if (window.PublicKeyCredential) {
+    // 设置监听器
+    $('#passkey-signin').addEventListener('click', async e => {
+      try {
+        loading.start();
+        const user = await authenticate();
+        console.log('user', user)
+        if (user) {
+          redirect('/home');
+        } else {
+          throw new Error('User not found.');
+        }
+      } catch (e) {
+        loading.stop();
+        console.error(e);
+        if (e.name !== 'NotAllowedError') {
+          alert(e.message);
+        }
       }
+    });
+  } else {
+    alert("WebAuthn isn't supported on this browser. Redirecting to a form.")
+    redirect('/');
+  }
 
-      if (window.PublicKeyCredential) {
-        $('#passkey-signin').addEventListener('click', async e => {
-          try {
-            loading.start();
-            const user = await authenticate();
-            if (user) {
-              redirect('/home');
-            } else {
-              throw new Error('User not found.');
-            }
-          } catch (e) {
-            loading.stop();
-            console.error(e);
-            if (e.name !== 'NotAllowedError') {
-              alert(e.message);
-            }
-          }
-        });
-      } else {
-        alert("WebAuthn isn't supported on this browser. Redirecting to a form.")
-        redirect('/');
-      }
-
-    </script>
+</script>

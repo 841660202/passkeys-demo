@@ -57,19 +57,18 @@ export const Users = {
 
   findByUsername: async (username) => {
     const results = [];
-    const refs = await store.collection('users')
-      .where('username', '==', username).get();
+    const refs = await store.collection('users').where('username', '==', username).get();
     if (refs) {
-      refs.forEach(user => results.push(user.data()));
+      refs.forEach((user) => results.push(user.data()));
     }
     return results.length > 0 ? results[0] : undefined;
   },
 
   update: async (user) => {
     const ref = store.collection('users').doc(user.id);
-      return ref.set(user);
-  }
-}
+    return ref.set(user);
+  },
+};
 
 /**
  * User data schema
@@ -97,10 +96,8 @@ export const Credentials = {
 
   findByUserId: async (user_id) => {
     const results = [];
-    const refs = await store.collection('credentials')
-      .where('user_id', '==', user_id)
-      .orderBy('registered', 'desc').get();
-    refs.forEach(cred => results.push(cred.data()));
+    const refs = await store.collection('credentials').where('user_id', '==', user_id).orderBy('registered', 'desc').get();
+    refs.forEach((cred) => results.push(cred.data()));
     return results;
   },
 
@@ -108,9 +105,9 @@ export const Credentials = {
     const ref = store.collection('credentials').doc(credential.id);
     return ref.set(credential);
   },
-  
+
   remove: async (credential_id, user_id) => {
     const ref = store.collection('credentials').doc(credential_id);
     return ref.delete();
-  }
-}
+  },
+};

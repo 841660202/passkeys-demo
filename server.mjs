@@ -30,33 +30,38 @@ import { auth } from './libs/auth.mjs';
 
 const views = path.join(__dirname, 'views');
 app.set('view engine', 'html');
-app.engine('html', hbs.engine({
-  extname: 'html',
-  defaultLayout: 'index',
-  layoutsDir: path.join(views, 'layouts'),
-  partialsDir: path.join(views, 'partials'),
-}));
+app.engine(
+  'html',
+  hbs.engine({
+    extname: 'html',
+    defaultLayout: 'index',
+    layoutsDir: path.join(views, 'layouts'),
+    partialsDir: path.join(views, 'partials'),
+  })
+);
 app.set('views', './views');
 app.use(express.json());
 app.use(useragent.express());
 app.use(express.static('public'));
 app.use(express.static('dist'));
-app.use(session({
-  secret: 'secret', // You should specify a real secret here
-  resave: true,
-  saveUninitialized: false,
-  proxy: true,
-  store: new FirestoreStore({
-    dataset: getFirestore(),
-    kind: 'express-sessions',
-  }),
-  cookie:{
-    path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV !== 'localhost',
-    maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
-  }
-}));
+app.use(
+  session({
+    secret: 'secret', // You should specify a real secret here
+    resave: true,
+    saveUninitialized: false,
+    proxy: true,
+    store: new FirestoreStore({
+      dataset: getFirestore(),
+      kind: 'express-sessions',
+    }),
+    cookie: {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== 'localhost',
+      maxAge: 1000 * 60 * 60 * 24 * 365, // 1 year
+    },
+  })
+);
 
 const RP_NAME = 'Passkeys Demo';
 
@@ -70,6 +75,7 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
+  console.log('req.session.username', req.session.username);
   // Check session
   if (req.session.username) {
     // If username is known, redirect to `/reauth`.
@@ -127,10 +133,7 @@ app.get('/home', (req, res) => {
 
 app.get('/.well-known/assetlinks.json', (req, res) => {
   const assetlinks = [];
-  const relation = [
-    'delegate_permission/common.handle_all_urls',
-    'delegate_permission/common.get_login_creds',
-  ];
+  const relation = ['delegate_permission/common.handle_all_urls', 'delegate_permission/common.get_login_creds'];
   assetlinks.push({
     relation: relation,
     target: {
@@ -139,8 +142,8 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
     },
   });
   if (process.env.ANDROID_PACKAGENAME && process.env.ANDROID_SHA256HASH) {
-    const package_names = process.env.ANDROID_PACKAGENAME.split(",").map(name => name.trim());
-    const hashes = process.env.ANDROID_SHA256HASH.split(",").map(hash => hash.trim());
+    const package_names = process.env.ANDROID_PACKAGENAME.split(',').map((name) => name.trim());
+    const hashes = process.env.ANDROID_SHA256HASH.split(',').map((hash) => hash.trim());
     for (let i = 0; i < package_names.length; i++) {
       assetlinks.push({
         relation: relation,
