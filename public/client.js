@@ -120,6 +120,8 @@ export async function registerCredential() {
   const cred = await navigator.credentials.create({
     publicKey: options,
   });
+  console.log('cred', cred)
+debugger
   const credential = {};
   credential.id = cred.id;
   // Base64URL encode `rawId`
